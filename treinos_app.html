@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Treinos Aeróbicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:      #0a0a0a;
+    --card:    #131313;
+    --card2:   #1d1d1d;
+    --card3:   #242424;
+    --accent:  #c8ff00;
+    --accent2: #00d4ff;
+    --accent3: #ff6b00;
+    --red:     #ff4040;
+    --success: #00ffaa;
+    --text:    #efefef;
+    --muted:   #666;
+    --muted2:  #888;
+    --border:  #252525;
+    --border2: #303030;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px 0;
+  }
+  .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .app-logo { display: flex; align-items: baseline; gap: 8px; }
+  .app-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px; letter-spacing: 3px; color: var(--accent); line-height: 1;
+    text-shadow: 0 0 18px rgba(200,255,0,0.3);
+  }
+  .app-sub { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .prog-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted2); text-align: right; }
+  .prog-num strong { color: var(--accent); font-size: 14px; }
+  .header-progress { display: flex; align-items: center; padding-bottom: 11px; }
+  .prog-bar-outer { flex: 1; height: 2px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .prog-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(200,255,0,0.4);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex; background: var(--bg); border-bottom: 1px solid var(--border);
+    position: sticky; top: 73px; z-index: 90;
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 11px 6px;
+    font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PAGES */
+  .page { display: none; padding: 14px; padding-bottom: 90px; }
+  .page.active { display: block; }
+
+  /* TREINO HEADER CARD */
+  .treino-header {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 16px 16px 14px;
+    margin-bottom: 12px;
+    position: relative; overflow: hidden;
+  }
+  .treino-header::after {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(200,255,0,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .treino-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .nav-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--border2); background: var(--card2);
+    color: var(--muted2); font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; user-select: none;
+  }
+  .nav-btn:active { transform: scale(0.86); background: var(--card3); }
+  .nav-btn:disabled { opacity: 0.18; cursor: default; }
+  .treino-center { flex: 1; text-align: center; padding: 0 6px; }
+  .treino-id { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .treino-nome-big { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1.5px; line-height: 1.05; color: var(--text); }
+
+  .meta-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 50px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .chip.feito   { background: rgba(0,255,170,0.1); color: var(--success); border: 1px solid rgba(0,255,170,0.2); }
+  .chip.pendente{ background: rgba(200,255,0,0.08); color: var(--accent);  border: 1px solid rgba(200,255,0,0.15); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .chip.pse-chip { background: rgba(255,107,0,0.1); color: var(--accent3); border: 1px solid rgba(255,107,0,0.2); gap: 4px; }
+  .chip.pse-chip .pse-big { font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 1; }
+
+  /* SECTION LABEL */
+  .slabel { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; padding-left: 2px; }
+
+  /* VARS GRID */
+  .vars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .vc {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 13px 13px 11px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .vc.wide { grid-column: 1 / -1; }
+  .vc.acc  { border-color: rgba(200,255,0,0.22); background: rgba(200,255,0,0.03); }
+  .vc.blu  { border-color: rgba(0,212,255,0.18);  background: rgba(0,212,255,0.03); }
+  .vc.ora  { border-color: rgba(255,107,0,0.18);  background: rgba(255,107,0,0.03); }
+  .vl { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .vv { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; line-height: 1; color: var(--text); }
+  .vv.g { color: var(--accent); }
+  .vv.b { color: var(--accent2); }
+  .vv.o { color: var(--accent3); }
+  .vu { font-family: 'Syne', sans-serif; font-size: 11px; color: var(--muted2); font-weight: 400; }
+
+  /* HIT BLOCKS */
+  .hit-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+  .hit-top { padding: 12px 14px 4px; display: flex; align-items: center; justify-content: space-between; }
+  .hit-legend { display: flex; gap: 10px; }
+  .hleg { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--muted2); font-weight: 700; letter-spacing: 0.5px; }
+  .hleg-dot { width: 8px; height: 8px; border-radius: 3px; }
+  .hleg-dot.s { background: var(--accent2); }
+  .hleg-dot.f { background: var(--accent); }
+  .hit-scroll { padding: 8px 14px 14px; overflow-x: auto; scrollbar-width: none; display: flex; gap: 6px; align-items: flex-end; }
+  .hit-scroll::-webkit-scrollbar { display: none; }
+
+  .hit-col { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 52px; }
+  .hb {
+    border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 4px 3px; gap: 1px;
+  }
+  .hb.slow { background: rgba(0,212,255,0.13); border: 1px solid rgba(0,212,255,0.28); }
+  .hb.fast { background: rgba(200,255,0,0.13); border: 1px solid rgba(200,255,0,0.28); }
+  .hb-t  { font-family: 'Bebas Neue', sans-serif; font-size: 12px; line-height: 1; letter-spacing: 0.3px; }
+  .hb-i  { font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; line-height: 1; }
+  .hb-v  { font-size: 9px; color: var(--muted2); font-weight: 600; line-height: 1; }
+  .hb.slow .hb-t { color: var(--accent2); }
+  .hb.slow .hb-i { color: rgba(0,212,255,0.7); }
+  .hb.fast .hb-t { color: var(--accent); }
+  .hb.fast .hb-i { color: rgba(200,255,0,0.7); }
+  .hit-more { color: var(--muted); font-size: 11px; font-weight: 700; align-self: center; padding: 0 4px; white-space: nowrap; text-align: center; line-height: 1.4; }
+
+  /* FORM CARD */
+  .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+  .form-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+
+  /* PSE esperado box */
+  .pse-box {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,107,0,0.07); border: 1px solid rgba(255,107,0,0.18);
+    border-radius: 12px; padding: 11px 14px; margin-bottom: 12px;
+  }
+  .pse-box-label { font-size: 10px; font-weight: 700; color: var(--accent3); letter-spacing: 1px; text-transform: uppercase; }
+  .pse-box-sub   { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; margin-top: 2px; }
+  .pse-box-val   { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--accent3); letter-spacing: 1px; text-shadow: 0 0 12px rgba(255,107,0,0.3); }
+
+  .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .frow.one { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .field input {
+    background: var(--card2); border: 1px solid var(--border2); border-radius: 12px;
+    padding: 13px 14px; color: var(--text); font-size: 17px; font-weight: 600;
+    font-family: 'DM Mono', monospace; width: 100%; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200,255,0,0.07); }
+  .field input[type="date"], .field input[type="time"] { color-scheme: dark; }
+  .field.pe label { color: var(--accent3); }
+  .field.pe input:focus { border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(255,107,0,0.07); }
+
+  .btn-save {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: var(--accent); color: #000;
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
+    box-shadow: 0 4px 20px rgba(200,255,0,0.18);
+    position: relative; overflow: hidden;
+  }
+  .btn-save::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .btn-save:active { transform: scale(0.97); box-shadow: none; }
+  .btn-save.saved  { background: var(--success); box-shadow: 0 4px 20px rgba(0,255,170,0.18); }
+  .btn-clear {
+    width: 100%; padding: 11px; border-radius: 12px;
+    border: 1px solid rgba(255,64,64,0.18); background: transparent;
+    color: var(--red); font-size: 13px; font-weight: 700; cursor: pointer;
+    letter-spacing: 0.5px; transition: all 0.15s; opacity: 0.65;
+  }
+  .btn-clear:active { background: rgba(255,64,64,0.07); opacity: 1; }
+
+  /* LISTA */
+  .search-wrap { position: relative; margin-bottom: 12px; }
+  .search-wrap input {
+    width: 100%; background: var(--card); border: 1px solid var(--border2);
+    border-radius: 12px; padding: 13px 14px 13px 42px; color: var(--text);
+    font-size: 15px; font-family: 'Syne', sans-serif; font-weight: 500; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; }
+  .treino-list { display: flex; flex-direction: column; gap: 7px; }
+  .li {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 13px 14px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .li:active { background: var(--card2); transform: scale(0.99); }
+  .li.done { border-color: rgba(0,255,170,0.15); }
+  .li-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--card2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted2);
+    flex-shrink: 0; font-weight: 500;
+  }
+  .li.done .li-num { background: rgba(0,255,170,0.08); border-color: rgba(0,255,170,0.18); color: var(--success); font-size: 15px; }
+  .li-info { flex: 1; min-width: 0; }
+  .li-nome { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-sub  { font-size: 11px; color: var(--muted2); margin-top: 3px; font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-arr  { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+  /* HISTÓRICO */
+  .hist-empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; line-height: 1.8; }
+  .hcard {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px 16px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+  }
+  .hcard:active { background: var(--card2); }
+  .hcard-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .hcard-nome { font-size: 14px; font-weight: 700; }
+  .hcard-num  { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .hcard-date { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted2); text-align: right; }
+  .hpills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hp {
+    background: var(--card2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px 10px; font-size: 11px; color: var(--muted2); font-family: 'DM Mono', monospace;
+  }
+  .hp strong { color: var(--text); }
+  .hp.pse-pill { border-color: rgba(255,107,0,0.18); background: rgba(255,107,0,0.06); }
+  .hp.pse-pill strong { color: var(--accent3); }
+  .diff-pos { color: var(--success); }
+  .diff-neg { color: var(--red); }
+  .diff-neu { color: var(--muted2); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--success); color: #000;
+    padding: 11px 22px; border-radius: 50px; font-size: 13px; font-weight: 700;
+    z-index: 9998; transition: transform 0.38s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap; letter-spacing: 0.3px; box-shadow: 0 4px 20px rgba(0,255,170,0.28);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* BACKUP PAGE */
+  .bk-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+  .bk-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .bk-desc  { font-size: 12px; color: var(--muted2); line-height: 1.6; margin-bottom: 14px; }
+
+  .sync-status {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+    font-size: 12px; color: var(--muted2); font-family: 'DM Mono', monospace;
+  }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync-dot.ok      { background: var(--success); box-shadow: 0 0 6px rgba(0,255,170,0.5); }
+  .sync-dot.error   { background: var(--red);     box-shadow: 0 0 6px rgba(255,64,64,0.5); }
+  .sync-dot.sending { background: var(--accent);  animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .btn-bk {
+    width: 100%; padding: 14px; border-radius: 12px; border: none;
+    font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px;
+    cursor: pointer; transition: all 0.2s; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-bk.green  { background: var(--accent); color: #000; box-shadow: 0 4px 16px rgba(200,255,0,0.15); }
+  .btn-bk.blue   { background: rgba(0,212,255,0.12); color: var(--accent2); border: 1px solid rgba(0,212,255,0.25); }
+  .btn-bk.sheets { background: rgba(0,255,170,0.1); color: var(--success); border: 1px solid rgba(0,255,170,0.2); }
+  .btn-bk:active { transform: scale(0.97); }
+
+  .bk-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .bk-stat  { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+  .bk-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); }
+  .bk-stat-lbl { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+  .sheets-log { background: var(--card2); border-radius: 10px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted2); max-height: 120px; overflow-y: auto; }
+  .sheets-log .log-line { padding: 2px 0; border-bottom: 1px solid var(--border); }
+  .sheets-log .log-line:last-child { border: none; }
+  .log-ok  { color: var(--success); }
+  .log-err { color: var(--red); }
+
+  /* file input hidden */
+  #fileImport { display: none; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .page.active > * { animation: slideUp 0.28s ease both; }
+  .page.active > *:nth-child(2) { animation-delay: 0.06s; }
+  .page.active > *:nth-child(3) { animation-delay: 0.11s; }
+  .page.active > *:nth-child(4) { animation-delay: 0.16s; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="app-logo">
+      <div class="app-title">TREINOS</div>
+      <div class="app-sub">Aeróbico</div>
+    </div>
+    <div class="prog-num"><strong id="doneCount">0</strong> / 100<br><span style="font-size:9px">concluídos</span></div>
+  </div>
+  <div class="header-progress">
+    <div class="prog-bar-outer"><div class="prog-bar-inner" id="progressBar" style="width:0%"></div></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('hoje')">📋 Hoje</div>
+  <div class="tab" onclick="switchTab('lista')">📂 Lista</div>
+  <div class="tab" onclick="switchTab('hist')">📊 Histórico</div>
+  <div class="tab" onclick="switchTab('bk')">☁️ Backup</div>
+</div>
+
+<!-- PAGE HOJE -->
+<div class="page active" id="page-hoje">
+
+  <div class="treino-header">
+    <div class="treino-nav">
+      <button class="nav-btn" id="btnPrev" onclick="navigate(-1)">‹</button>
+      <div class="treino-center">
+        <div class="treino-id" id="treinoId">TREINO 1 DE 100</div>
+        <div class="treino-nome-big" id="treinoNome">—</div>
+      </div>
+      <button class="nav-btn" id="btnNext" onclick="navigate(1)">›</button>
+    </div>
+    <div class="meta-row">
+      <div class="chip pendente" id="statusChip"><div class="dot"></div><span id="statusTxt">Pendente</span></div>
+      <div class="chip pse-chip" id="pseChip" style="display:none">
+        PSE esp.&nbsp;<span class="pse-big" id="pseChipNum">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="slabel">Variáveis do Treino</div>
+  <div class="vars-grid" id="varsGrid"></div>
+
+  <div class="hit-card" id="hitCard" style="display:none">
+    <div class="hit-top">
+      <div class="slabel" style="margin:0">Estrutura do Treino</div>
+      <div class="hit-legend">
+        <div class="hleg"><div class="hleg-dot s"></div>Lento</div>
+        <div class="hleg"><div class="hleg-dot f"></div>Rápido</div>
+      </div>
+    </div>
+    <div class="hit-scroll" id="hitBlocks"></div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-title">📝 Registrar Resultado</div>
+
+    <div class="pse-box" id="pseBox" style="display:none">
+      <div>
+        <div class="pse-box-label">PSE Esperado</div>
+        <div class="pse-box-sub">calculado pela planilha</div>
+      </div>
+      <div class="pse-box-val" id="pseBoxVal">—</div>
+    </div>
+
+    <div class="frow">
+      <div class="field"><label>Data</label><input type="date" id="inpData"></div>
+      <div class="field"><label>Hora</label><input type="time" id="inpHora"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Fmáx (bpm)</label><input type="number" id="inpFmax" inputmode="numeric" placeholder="—"></div>
+      <div class="field"><label>Fméd (bpm)</label><input type="number" id="inpFmed" inputmode="numeric" placeholder="—"></div>
+    </div>
+    <div class="frow one">
+      <div class="field pe"><label>PE — Esforço Real (1–10)</label><input type="number" id="inpPE" inputmode="decimal" placeholder="Ex: 6.5" min="1" max="10" step="0.5"></div>
+    </div>
+
+    <button class="btn-save" id="btnSave" onclick="saveRecord()">SALVAR TREINO</button>
+    <button class="btn-clear" onclick="clearRecord()">Limpar registro deste treino</button>
+  </div>
+</div>
+
+<!-- PAGE LISTA -->
+<div class="page" id="page-lista">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Buscar por nome ou número..." oninput="filterList(this.value)" id="searchInput">
+  </div>
+  <div class="treino-list" id="treinoList"></div>
+</div>
+
+<!-- PAGE HISTÓRICO -->
+<div class="page" id="page-hist">
+  <div id="histContent"></div>
+</div>
+
+<!-- PAGE BACKUP -->
+<div class="page" id="page-bk">
+
+  <!-- Stats -->
+  <div class="bk-stats">
+    <div class="bk-stat">
+      <div class="bk-stat-val" id="bkDone">0</div>
+      <div class="bk-stat-lbl">Registrados</div>
+    </div>
+    <div class="bk-stat">
+      <div class="bk-stat-val" id="bkLast" style="font-size:16px;padding-top:6px">—</div>
+      <div class="bk-stat-lbl">Último sync</div>
+    </div>
+  </div>
+
+  <!-- Google Sheets -->
+  <div class="bk-card">
+    <div class="bk-title">☁️ Google Sheets</div>
+    <div class="bk-desc">Envia todos os registros para a sua planilha na nuvem. Acontece automaticamente ao salvar um treino, ou clique abaixo para forçar.</div>
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncMsg">Aguardando...</span>
+    </div>
+    <button class="btn-bk sheets" onclick="syncAll()">☁️ SINCRONIZAR TUDO AGORA</button>
+    <div class="sheets-log" id="sheetsLog"><div class="log-line" style="color:var(--muted)">Nenhuma sincronização ainda</div></div>
+  </div>
+
+  <!-- Exportar JSON -->
+  <div class="bk-card">
+    <div class="bk-title">💾 Exportar JSON</div>
+    <div class="bk-desc">Baixa um arquivo com todos os seus dados. Guarde no Google Drive, WhatsApp ou e-mail como seguro extra.</div>
+    <button class="btn-bk green" onclick="exportJSON()">💾 BAIXAR BACKUP (.JSON)</button>
+  </div>
+
+  <!-- Importar JSON -->
+  <div class="bk-card">
+    <div class="bk-title">📂 Importar JSON</div>
+    <div class="bk-desc">Restaura dados a partir de um arquivo de backup exportado anteriormente. Os dados atuais serão substituídos.</div>
+    <button class="btn-bk blue" onclick="document.getElementById('fileImport').click()">📂 CARREGAR ARQUIVO DE BACKUP</button>
+    <input type="file" id="fileImport" accept=".json" onchange="importJSON(this)">
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwFXzG2ZDo601YVUWwYRMRWzE79Mu09rUvisa9T79WSMAYKx6rHymZWMt6d49t_aMAJFg/exec';
+let syncLog = [];
+let lastSync = null;
+
+// ── SYNC TO GOOGLE SHEETS ──────────────────────────────
+async function syncOne(tr, rec) {
+  const payload = {
+    t: tr.t, treino: tr.treino,
+    data: rec.data||'', hora: rec.hora||'',
+    fmax: rec.fmax||'', fmed: rec.fmed||'',
+    pe: rec.pe||'', pse: tr.pse||''
+  };
+  const res = await fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error||'Erro desconhecido');
+  return true;
+}
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncMsg');
+  dot.className = `sync-dot ${state}`;
+  if (txt) txt.textContent = msg;
+}
+
+function addLog(msg, ok=true) {
+  const now = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  syncLog.unshift({msg, ok, time: now});
+  if (syncLog.length > 30) syncLog.pop();
+  renderLog();
+  if (ok) {
+    lastSync = now;
+    const el = document.getElementById('bkLast');
+    if (el) el.textContent = now;
+    localStorage.setItem('treinos_lastSync', now);
+  }
+}
+
+function renderLog() {
+  const el = document.getElementById('sheetsLog');
+  if (!el) return;
+  if (!syncLog.length) { el.innerHTML='<div class="log-line" style="color:var(--muted)">Nenhuma sincronização ainda</div>'; return; }
+  el.innerHTML = syncLog.map(l =>
+    `<div class="log-line ${l.ok?'log-ok':'log-err'}">${l.time} ${l.ok?'✓':'✗'} ${l.msg}</div>`
+  ).join('');
+}
+
+async function syncOneWithFeedback(tr, rec) {
+  setSyncStatus('sending', `Enviando treino #${tr.t}...`);
+  try {
+    await syncOne(tr, rec);
+    setSyncStatus('ok', `Treino #${tr.t} sincronizado ✓`);
+    addLog(`Treino #${tr.t} — ${tr.treino}`, true);
+  } catch(e) {
+    setSyncStatus('error', `Erro no treino #${tr.t}`);
+    addLog(`Treino #${tr.t} — ${e.message}`, false);
+  }
+}
+
+async function syncAll() {
+  const todos = TREINOS.filter(tr => isDone(records[tr.t]));
+  if (!todos.length) { showToast('Nenhum treino para sincronizar'); return; }
+  setSyncStatus('sending', `Sincronizando ${todos.length} treinos...`);
+  let ok=0, fail=0;
+  for (const tr of todos) {
+    try {
+      await syncOne(tr, records[tr.t]);
+      addLog(`#${tr.t} ${tr.treino}`, true);
+      ok++;
+    } catch(e) {
+      addLog(`#${tr.t} ${e.message}`, false);
+      fail++;
+    }
+  }
+  if (fail===0) {
+    setSyncStatus('ok', `${ok} treinos sincronizados ✓`);
+    showToast(`${ok} treinos enviados para o Sheets! ☁️`);
+  } else {
+    setSyncStatus('error', `${ok} ok, ${fail} com erro`);
+    showToast(`${ok} ok · ${fail} com erro`);
+  }
+}
+
+// ── EXPORT JSON ──────────────────────────────────────
+function exportJSON() {
+  const done = TREINOS.filter(tr=>isDone(records[tr.t]));
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: 3,
+    totalRegistros: done.length,
+    records: records
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `treinos_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup exportado! 💾');
+}
+
+// ── IMPORT JSON ──────────────────────────────────────
+function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const imported = data.records || data; // suporta formato simples também
+      if (typeof imported !== 'object') throw new Error('Formato inválido');
+      records = imported;
+      save();
+      updateProgress();
+      renderHoje();
+      const n = Object.keys(records).length;
+      showToast(`${n} registros importados! ✓`);
+      renderBkStats();
+    } catch(err) {
+      showToast('Erro ao ler o arquivo :(');
+    }
+  };
+  reader.readAsText(file);
+  input.value = ''; // reset para permitir reimportar o mesmo arquivo
+}
+
+// ── BACKUP PAGE STATS ────────────────────────────────
+function renderBkStats() {
+  const n = TREINOS.filter(tr=>isDone(records[tr.t])).length;
+  const el = document.getElementById('bkDone');
+  if (el) el.textContent = n;
+  const ls = localStorage.getItem('treinos_lastSync');
+  const lel = document.getElementById('bkLast');
+  if (lel && ls) lel.textContent = ls;
+}
+
+const TREINOS = [{"t":1,"treino":"HIT Corrida VD","data":"2026-04-30","hora":"07:00","fmax":167,"fmed":133,"pe":7,"pse":5.17,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.1,"v2":10.1,"i1":1.0,"i2":1.0},{"t":2,"treino":"HIT Caminhada VD","data":"2026-05-05","hora":"07:00","fmax":144,"fmed":120,"pe":5,"pse":4.1,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4,"v2":4,"i1":8.0,"i2":15.0},{"t":3,"treino":"Corrida TD","data":"2026-05-06","hora":"07:00","fmax":171,"fmed":138,"pe":6,"pse":4.21,"t1_sec":165,"t2_sec":195,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":4,"treino":"Caminhada D","data":"2026-05-07","hora":"07:00","fmax":96,"fmed":90,"pe":3,"pse":3.83,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5,"v2":0,"i1":1.0,"i2":null},{"t":5,"treino":"HIT Caminhada TD","data":"2026-05-08","hora":"07:00","fmax":124,"fmed":143,"pe":5,"pse":4.55,"t1_sec":165,"t2_sec":165,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":6,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.2,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.1,"v2":10.2,"i1":1.0,"i2":1.0},{"t":7,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.15,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4,"v2":4.1,"i1":8.0,"i2":15.0},{"t":8,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.34,"t1_sec":150,"t2_sec":210,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":9,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.83,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5,"v2":0,"i1":1.0,"i2":null},{"t":10,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.6,"t1_sec":150,"t2_sec":180,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":11,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.27,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.2,"v2":10.3,"i1":1.0,"i2":1.0},{"t":12,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.2,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.1,"v2":4.1,"i1":8.0,"i2":15.0},{"t":13,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.46,"t1_sec":135,"t2_sec":225,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":14,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.83,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5,"v2":0,"i1":1.0,"i2":null},{"t":15,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.65,"t1_sec":135,"t2_sec":195,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":16,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.3,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.2,"v2":10.4,"i1":1.0,"i2":1.0},{"t":17,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.25,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.1,"v2":4.2,"i1":8.0,"i2":15.0},{"t":18,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.59,"t1_sec":120,"t2_sec":240,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":19,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.9,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.1,"v2":0,"i1":1.0,"i2":null},{"t":20,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.7,"t1_sec":120,"t2_sec":210,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":21,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.37,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.3,"v2":10.5,"i1":1.0,"i2":1.0},{"t":22,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.28,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.15,"v2":4.2,"i1":8.0,"i2":15.0},{"t":23,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.72,"t1_sec":105,"t2_sec":255,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":24,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.9,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.1,"v2":0,"i1":1.0,"i2":null},{"t":25,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.75,"t1_sec":105,"t2_sec":225,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":26,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.41,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.3,"v2":10.6,"i1":1.0,"i2":1.0},{"t":27,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.33,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.19,"v2":4.25,"i1":8.0,"i2":15.0},{"t":28,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.85,"t1_sec":90,"t2_sec":270,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":29,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.9,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.1,"v2":0,"i1":1.0,"i2":null},{"t":30,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.81,"t1_sec":90,"t2_sec":240,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":31,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.47,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.4,"v2":10.7,"i1":1.0,"i2":1.0},{"t":32,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.37,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.23,"v2":4.29,"i1":8.0,"i2":15.0},{"t":33,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.97,"t1_sec":75,"t2_sec":285,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":34,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.98,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.2,"v2":0,"i1":1.0,"i2":null},{"t":35,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.86,"t1_sec":75,"t2_sec":255,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":36,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.51,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.4,"v2":10.8,"i1":1.0,"i2":1.0},{"t":37,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.41,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.27,"v2":4.33,"i1":8.0,"i2":15.0},{"t":38,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.1,"t1_sec":60,"t2_sec":300,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":39,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.98,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.2,"v2":0,"i1":1.0,"i2":null},{"t":40,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.91,"t1_sec":60,"t2_sec":270,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":41,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.58,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":10.9,"i1":1.0,"i2":1.0},{"t":42,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.45,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.31,"v2":4.37,"i1":8.0,"i2":15.0},{"t":43,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.23,"t1_sec":45,"t2_sec":315,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":44,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":3.98,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.2,"v2":0,"i1":1.0,"i2":null},{"t":45,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.96,"t1_sec":45,"t2_sec":285,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":46,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.61,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11,"i1":1.0,"i2":1.0},{"t":47,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.49,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.35,"v2":4.41,"i1":8.0,"i2":15.0},{"t":48,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.36,"t1_sec":30,"t2_sec":330,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":49,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.05,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.3,"v2":0,"i1":1.0,"i2":null},{"t":50,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.01,"t1_sec":30,"t2_sec":300,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":51,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.64,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.1,"i1":1.0,"i2":1.0},{"t":52,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.53,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.39,"v2":4.45,"i1":8.0,"i2":15.0},{"t":53,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.48,"t1_sec":15,"t2_sec":345,"cic":5,"v1":5,"v2":11,"i1":1.0,"i2":1.0},{"t":54,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.05,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.3,"v2":0,"i1":1.0,"i2":null},{"t":55,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.06,"t1_sec":15,"t2_sec":315,"cic":10,"v1":3.5,"v2":4.5,"i1":12.0,"i2":12.0},{"t":56,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.68,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.2,"i1":1.0,"i2":1.0},{"t":57,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.57,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.43,"v2":4.49,"i1":8.0,"i2":15.0},{"t":58,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.61,"t1_sec":1800,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":59,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.05,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.3,"v2":0,"i1":1.0,"i2":null},{"t":60,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.12,"t1_sec":3300,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":61,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.71,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.3,"i1":1.0,"i2":1.0},{"t":62,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.61,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.47,"v2":4.53,"i1":8.0,"i2":15.0},{"t":63,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.7,"t1_sec":1830,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":64,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.13,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.4,"v2":0,"i1":1.0,"i2":null},{"t":65,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.16,"t1_sec":3330,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":66,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.75,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.4,"i1":1.0,"i2":1.0},{"t":67,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.65,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.51,"v2":4.57,"i1":8.0,"i2":15.0},{"t":68,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.8,"t1_sec":1860,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":69,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.13,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.4,"v2":0,"i1":1.0,"i2":null},{"t":70,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.21,"t1_sec":3360,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":71,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.78,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.5,"i1":1.0,"i2":1.0},{"t":72,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.69,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.55,"v2":4.61,"i1":8.0,"i2":15.0},{"t":73,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.89,"t1_sec":1890,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":74,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.13,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.4,"v2":0,"i1":1.0,"i2":null},{"t":75,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.25,"t1_sec":3390,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":76,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.81,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.6,"i1":1.0,"i2":1.0},{"t":77,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.74,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.59,"v2":4.65,"i1":8.0,"i2":15.0},{"t":78,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.98,"t1_sec":1920,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":79,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.21,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.5,"v2":0,"i1":1.0,"i2":null},{"t":80,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.3,"t1_sec":3420,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":81,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.85,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.7,"i1":1.0,"i2":1.0},{"t":82,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.78,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.63,"v2":4.69,"i1":8.0,"i2":15.0},{"t":83,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":6.08,"t1_sec":1950,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":84,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.21,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.5,"v2":0,"i1":1.0,"i2":null},{"t":85,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.35,"t1_sec":3450,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":86,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.88,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.8,"i1":1.0,"i2":1.0},{"t":87,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.82,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.67,"v2":4.73,"i1":8.0,"i2":15.0},{"t":88,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":6.17,"t1_sec":1980,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":89,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.21,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.5,"v2":0,"i1":1.0,"i2":null},{"t":90,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.39,"t1_sec":3480,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":91,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.92,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":11.9,"i1":1.0,"i2":1.0},{"t":92,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.86,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.71,"v2":4.77,"i1":8.0,"i2":15.0},{"t":93,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":6.26,"t1_sec":2010,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":94,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.28,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.6,"v2":0,"i1":1.0,"i2":null},{"t":95,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.44,"t1_sec":3510,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null},{"t":96,"treino":"HIT Corrida VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.95,"t1_sec":240,"t2_sec":240,"cic":5,"v1":5.5,"v2":12,"i1":1.0,"i2":1.0},{"t":97,"treino":"HIT Caminhada VD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.9,"t1_sec":150,"t2_sec":150,"cic":10,"v1":4.75,"v2":4.81,"i1":8.0,"i2":15.0},{"t":98,"treino":"Corrida TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":6.36,"t1_sec":2040,"t2_sec":0,"cic":1,"v1":11,"v2":0,"i1":1.0,"i2":null},{"t":99,"treino":"Caminhada D","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":4.28,"t1_sec":2700,"t2_sec":0,"cic":1,"v1":5.6,"v2":0,"i1":1.0,"i2":null},{"t":100,"treino":"HIT Caminhada TD","data":null,"hora":null,"fmax":null,"fmed":null,"pe":null,"pse":5.49,"t1_sec":3540,"t2_sec":0,"cic":1,"v1":4.5,"v2":0,"i1":12.0,"i2":null}];
+
+let curIdx = 0;
+let records = {};
+
+function load() { try { records = JSON.parse(localStorage.getItem('treinos_v3')||'{}'); } catch(e){records={};} }
+function save()  { localStorage.setItem('treinos_v3', JSON.stringify(records)); }
+
+function sec2s(s) {
+  if (!s && s!==0) return '—';
+  const m=Math.floor(s/60), sec=s%60;
+  return sec===0 ? `${m}min` : `${m}m${sec}s`;
+}
+function fv(v,d=1) {
+  if (v===null||v===undefined) return '—';
+  return typeof v==='number' ? (+v.toFixed(d)).toString() : String(v);
+}
+function incl(v) { return (v && v>1) ? `${v|0}%` : null; }
+function today()  { return new Date().toISOString().slice(0,10); }
+function nowT()   { return new Date().toTimeString().slice(0,5); }
+function fdate(s) { if(!s) return '—'; const[y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+function isDone(r) { return r && (r.data||r.fmax||r.pe); }
+
+function renderHoje() {
+  const tr = TREINOS[curIdx];
+  const rec = records[tr.t]||{};
+  const done = isDone(rec);
+
+  document.getElementById('treinoId').textContent  = `TREINO ${tr.t} DE 100`;
+  document.getElementById('treinoNome').textContent = tr.treino;
+
+  const chip = document.getElementById('statusChip');
+  chip.className = `chip ${done?'feito':'pendente'}`;
+  document.getElementById('statusTxt').textContent = done ? 'Concluído ✓' : 'Pendente';
+
+  const hasP = tr.pse!=null;
+  document.getElementById('pseChip').style.display    = hasP ? '' : 'none';
+  document.getElementById('pseBox').style.display     = hasP ? '' : 'none';
+  if (hasP) {
+    document.getElementById('pseChipNum').textContent = tr.pse;
+    document.getElementById('pseBoxVal').textContent  = tr.pse;
+  }
+
+  document.getElementById('btnPrev').disabled = curIdx===0;
+  document.getElementById('btnNext').disabled = curIdx===TREINOS.length-1;
+
+  const isHIT = tr.cic>1 && tr.t2_sec>0;
+
+  // VARS
+  const g = document.getElementById('varsGrid');
+  let cells = [];
+  if (!isHIT) {
+    const i1 = incl(tr.i1);
+    cells.push({l:'Velocidade',  v:fv(tr.v1), u:'km/h',  c:'g',  hi:'acc'});
+    cells.push({l:'Duração',     v:sec2s(tr.t1_sec), u:'', c:'',  hi:''});
+    if (i1) cells.push({l:'Inclinação', v:i1, u:'', c:'b', hi:'blu'});
+  } else {
+    const i1=incl(tr.i1), i2=incl(tr.i2);
+    const tot = (tr.t1_sec+tr.t2_sec)*tr.cic;
+    cells.push({l:'Vel. Lenta (V1)',   v:fv(tr.v1), u:'km/h', c:'b', hi:'blu'});
+    cells.push({l:'Vel. Rápida (V2)',  v:fv(tr.v2), u:'km/h', c:'g', hi:'acc'});
+    cells.push({l:'Tempo Lento (T1)',  v:sec2s(tr.t1_sec), u:'', c:'', hi:''});
+    cells.push({l:'Tempo Rápido (T2)', v:sec2s(tr.t2_sec), u:'', c:'', hi:''});
+    cells.push({l:'Ciclos', v:tr.cic, u:'repetições', c:'', hi:''});
+    cells.push({l:'Tempo Total', v:sec2s(tot), u:'', c:'o', hi:'ora'});
+    if (i1) cells.push({l:'Incl. Lenta',  v:i1, u:'', c:'b', hi:'blu'});
+    if (i2) cells.push({l:'Incl. Rápida', v:i2, u:'', c:'g', hi:''});
+  }
+  g.innerHTML = cells.map(c=>`
+    <div class="vc ${c.hi}">
+      <div class="vl">${c.l}</div>
+      <div class="vv ${c.c}">${c.v} <span class="vu">${c.u}</span></div>
+    </div>`).join('');
+
+  // HIT BLOCKS
+  const hc = document.getElementById('hitCard');
+  const hb = document.getElementById('hitBlocks');
+  if (isHIT) {
+    hc.style.display='';
+    const show = Math.min(tr.cic, 6);
+    const tot2 = tr.t1_sec + tr.t2_sec;
+    const MAX  = 72;
+    const i1=incl(tr.i1), i2=incl(tr.i2);
+    let html='';
+    for (let i=0;i<show;i++) {
+      const h1=Math.max(30,Math.round((tr.t1_sec/tot2)*MAX));
+      const h2=Math.max(30,Math.round((tr.t2_sec/tot2)*MAX));
+      html+=`<div class="hit-col">
+        <div class="hb slow" style="height:${h1}px">
+          <span class="hb-t">${sec2s(tr.t1_sec)}</span>
+          ${i1?`<span class="hb-i">⬆${i1}</span>`:''}
+          <span class="hb-v">${fv(tr.v1)}</span>
+        </div>
+        <div class="hb fast" style="height:${h2}px">
+          <span class="hb-t">${sec2s(tr.t2_sec)}</span>
+          ${i2?`<span class="hb-i">⬆${i2}</span>`:''}
+          <span class="hb-v">${fv(tr.v2)}</span>
+        </div>
+      </div>`;
+    }
+    if (tr.cic>show) html+=`<div class="hit-more">+${tr.cic-show}<br>ciclos</div>`;
+    hb.innerHTML=html;
+  } else { hc.style.display='none'; }
+
+  // FORM
+  document.getElementById('inpData').value = rec.data||'';
+  document.getElementById('inpHora').value = rec.hora||'';
+  document.getElementById('inpFmax').value = rec.fmax!=null?rec.fmax:'';
+  document.getElementById('inpFmed').value = rec.fmed!=null?rec.fmed:'';
+  document.getElementById('inpPE').value   = rec.pe!=null?rec.pe:'';
+  updateProgress();
+}
+
+function saveRecord() {
+  const tr=TREINOS[curIdx];
+  records[tr.t]={
+    data: document.getElementById('inpData').value,
+    hora: document.getElementById('inpHora').value,
+    fmax: +document.getElementById('inpFmax').value||null,
+    fmed: +document.getElementById('inpFmed').value||null,
+    pe:   +document.getElementById('inpPE').value||null,
+  };
+  save();
+  const btn=document.getElementById('btnSave');
+  btn.textContent='✓ SALVO!'; btn.classList.add('saved');
+  setTimeout(()=>{btn.textContent='SALVAR TREINO';btn.classList.remove('saved');},1800);
+  showToast('Treino registrado! 💪');
+  updateProgress(); renderHoje();
+  // Auto-sync to Google Sheets in background
+  syncOneWithFeedback(tr, records[tr.t]);
+}
+
+function clearRecord() {
+  const tr=TREINOS[curIdx];
+  if (!records[tr.t]) return;
+  delete records[tr.t]; save();
+  ['inpData','inpHora','inpFmax','inpFmed','inpPE'].forEach(id=>document.getElementById(id).value='');
+  renderHoje(); showToast('Registro removido');
+}
+
+function navigate(d) {
+  const n=curIdx+d;
+  if(n<0||n>=TREINOS.length)return;
+  curIdx=n; renderHoje();
+}
+function goTo(idx) { curIdx=idx; switchTab('hoje'); renderHoje(); }
+
+function renderLista(filter='') {
+  const f=filter.toLowerCase();
+  const list=document.getElementById('treinoList');
+  const items=TREINOS.filter(tr=>!f||tr.treino.toLowerCase().includes(f)||String(tr.t).includes(f));
+  list.innerHTML=items.map(tr=>{
+    const idx=TREINOS.indexOf(tr);
+    const rec=records[tr.t];
+    const done=isDone(rec);
+    const isHIT=tr.cic>1&&tr.t2_sec>0;
+    const i1=incl(tr.i1);
+    const sub=isHIT
+      ?`${tr.cic}× ${sec2s(tr.t2_sec)} rápido · V2: ${fv(tr.v2)} km/h`
+      :`${sec2s(tr.t1_sec)} · ${fv(tr.v1)} km/h${i1?' · ⬆'+i1:''}`;
+    return `<div class="li ${done?'done':''}" onclick="goTo(${idx})">
+      <div class="li-num">${done?'✓':tr.t}</div>
+      <div class="li-info">
+        <div class="li-nome">${tr.treino}</div>
+        <div class="li-sub">${sub}</div>
+      </div>
+      <div class="li-arr">›</div>
+    </div>`;
+  }).join('');
+}
+function filterList(v){renderLista(v);}
+
+function renderHist() {
+  const done=TREINOS.filter(tr=>isDone(records[tr.t])).reverse();
+  const cont=document.getElementById('histContent');
+  if(!done.length){
+    cont.innerHTML='<div class="hist-empty">Nenhum treino registrado ainda.<br>Vai lá suar! 🏃‍♂️💨</div>';
+    return;
+  }
+  cont.innerHTML=done.map(tr=>{
+    const rec=records[tr.t];
+    let pills='';
+    if(rec.data)  pills+=`<div class="hp">📅 <strong>${fdate(rec.data)}</strong></div>`;
+    if(rec.hora)  pills+=`<div class="hp">⏱ <strong>${rec.hora}</strong></div>`;
+    if(rec.fmax)  pills+=`<div class="hp">❤️ Fmáx <strong>${rec.fmax}</strong> bpm</div>`;
+    if(rec.fmed)  pills+=`<div class="hp">💓 Fméd <strong>${rec.fmed}</strong> bpm</div>`;
+    if(rec.pe!=null&&tr.pse) {
+      const diff=rec.pe-tr.pse;
+      const s=diff>0?'+':'';
+      const cls=diff>0.5?'diff-pos':diff<-0.5?'diff-neg':'diff-neu';
+      pills+=`<div class="hp pse-pill">PE real <strong>${rec.pe}</strong> / PSE esp. <strong>${tr.pse}</strong> <span class="${cls}">(${s}${diff.toFixed(1)})</span></div>`;
+    } else if(rec.pe!=null) {
+      pills+=`<div class="hp pse-pill">PE real <strong>${rec.pe}</strong></div>`;
+    }
+    return `<div class="hcard" onclick="goTo(${TREINOS.indexOf(tr)})">
+      <div class="hcard-top">
+        <div><div class="hcard-nome">${tr.treino}</div><div class="hcard-num">Treino #${tr.t}</div></div>
+        ${rec.data?`<div class="hcard-date">${fdate(rec.data)}</div>`:''}
+      </div>
+      <div class="hpills">${pills||'<span style="color:var(--muted);font-size:12px">Sem dados</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateProgress() {
+  const n=TREINOS.filter(tr=>isDone(records[tr.t])).length;
+  document.getElementById('doneCount').textContent=n;
+  document.getElementById('progressBar').style.width=`${n}%`;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['hoje','lista','hist','bk'][i]===tab));
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`page-${tab}`).classList.add('active');
+  if(tab==='lista') renderLista(document.getElementById('searchInput').value);
+  if(tab==='hist')  renderHist();
+  if(tab==='bk')    renderBkStats();
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2300);
+}
+
+// INIT
+load();
+const firstPending=TREINOS.findIndex(tr=>!isDone(records[tr.t]));
+curIdx=firstPending>=0?firstPending:0;
+document.getElementById('inpData').value=today();
+document.getElementById('inpHora').value=nowT();
+renderHoje();
+updateProgress();
+</script>
+</body>
+</html>
