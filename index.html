@@ -350,8 +350,8 @@
 <header>
   <div class="header-row">
     <div class="app-logo">
-      <div class="app-title"> 100 TREINOS</div>
-      <div class="app-sub"> BOM DIA DEIVIDI</div>
+      <div class="app-title">TREINOS</div>
+      <div class="app-sub">Aeróbico</div>
     </div>
     <div class="prog-num"><strong id="doneCount">0</strong> / 100<br><span style="font-size:9px">concluídos</span></div>
   </div>
@@ -456,6 +456,17 @@
       <div class="bk-stat-val" id="bkLast" style="font-size:16px;padding-top:6px">—</div>
       <div class="bk-stat-lbl">Último sync</div>
     </div>
+  </div>
+
+  <!-- Restaurar do Sheets -->
+  <div class="bk-card" style="border-color:rgba(0,212,255,0.25)">
+    <div class="bk-title" style="color:var(--accent2)">🔄 Restaurar do Google Sheets</div>
+    <div class="bk-desc">Perdeu os dados do celular? Clique abaixo para restaurar tudo direto da planilha. Use sempre que limpar cache ou trocar de aparelho.</div>
+    <div class="sync-status" id="restoreStatus" style="display:none">
+      <div class="sync-dot sending" id="restoreDot"></div>
+      <span id="restoreMsg">Buscando dados...</span>
+    </div>
+    <button class="btn-bk" style="background:rgba(0,212,255,0.12);color:var(--accent2);border:1px solid rgba(0,212,255,0.3)" onclick="restoreFromSheets()">🔄 RESTAURAR DO SHEETS</button>
   </div>
 
   <!-- Google Sheets -->
@@ -604,7 +615,68 @@ async function syncAll() {
   }
 }
 
-// ── EXPORT JSON ──────────────────────────────────────
+// ── RESTORE FROM GOOGLE SHEETS ───────────────────────
+function restoreFromSheets() {
+  const statusBox = document.getElementById('restoreStatus');
+  const dot       = document.getElementById('restoreDot');
+  const msg       = document.getElementById('restoreMsg');
+  statusBox.style.display = 'flex';
+  dot.className = 'sync-dot sending';
+  msg.textContent = 'Buscando dados no Sheets...';
+
+  const cbName = `_restore_${Date.now()}`;
+  const timeout = setTimeout(() => {
+    delete window[cbName];
+    const s = document.getElementById(cbName);
+    if (s) s.remove();
+    dot.className = 'sync-dot error';
+    msg.textContent = 'Timeout — tente novamente';
+  }, 20000);
+
+  window[cbName] = (data) => {
+    clearTimeout(timeout);
+    delete window[cbName];
+    const s = document.getElementById(cbName);
+    if (s) s.remove();
+
+    if (!data.ok) {
+      dot.className = 'sync-dot error';
+      msg.textContent = `Erro: ${data.error}`;
+      return;
+    }
+
+    const imported = data.records || {};
+    const n = Object.keys(imported).length;
+
+    if (n === 0) {
+      dot.className = 'sync-dot error';
+      msg.textContent = 'Nenhum registro encontrado no Sheets';
+      return;
+    }
+
+    records = imported;
+    save();
+    updateProgress();
+    renderHoje();
+    renderBkStats();
+    dot.className = 'sync-dot ok';
+    msg.textContent = `${n} registros restaurados com sucesso ✓`;
+    showToast(`${n} treinos restaurados! 🎉`);
+  };
+
+  const params = new URLSearchParams({ callback: cbName, action: 'restore' });
+  const s = document.createElement('script');
+  s.id  = cbName;
+  s.src = `${SHEETS_URL}?${params.toString()}`;
+  s.onerror = () => {
+    clearTimeout(timeout);
+    delete window[cbName];
+    s.remove();
+    dot.className = 'sync-dot error';
+    msg.textContent = 'Erro ao conectar com o Sheets';
+  };
+  document.head.appendChild(s);
+}
 function exportJSON() {
   const done = TREINOS.filter(tr=>isDone(records[tr.t]));
   const payload = {
